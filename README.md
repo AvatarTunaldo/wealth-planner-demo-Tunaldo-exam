@@ -1,193 +1,21 @@
 # wealth-planner-demo-Tunaldo-exam
 Wealth Planner — powered by Tunaldo is a web application that provides a holistic, scenario-driven financial planning experience. It combines deterministic cashflow modelling with generative-AI explanations to give users clear, actionable, and easy-to-understand plans for savings, retirement timing, investments and major life events.
 
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Wealth Planner — demo</title>
-  <style>
-    :root{--bg:#f7fafc;--card:#fff;--muted:#6b7280;--accent:#0f766e}
-    body{font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:#0f172a; margin:0}
-    .wrap{max-width:960px;margin:28px auto;padding:20px}
-    header{display:flex;justify-content:space-between;align-items:center}
-    h1{margin:0;font-size:20px}
-    .muted{color:var(--muted);font-size:13px}
-    .grid{display:grid;grid-template-columns:1fr 320px;gap:18px;margin-top:18px}
-    .card{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06)}
-    label{display:block;font-weight:600;margin-bottom:6px;font-size:13px}
-    input,select{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e9ef}
-    button{background:var(--accent);color:white;border:none;padding:10px 14px;border-radius:10px;cursor:pointer}
-    .small{font-size:13px;color:var(--muted)}
-    pre{background:#f1f5f9;padding:10px;border-radius:8px;overflow:auto}
-    .chart{height:200px;border-radius:8px;background:linear-gradient(180deg,#ecfeff,transparent)}
-    .kpi{display:flex;gap:12px}
-    .kpi .item{padding:10px;border-radius:8px;background:#f8fafc}
-    footer{margin-top:18px;font-size:12px;color:var(--muted)}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <header>
-      <div>
-        <h1>Wealth Planner — demo (Tunaldo)</h1>
-        <div class="muted">Simple, offline demo for exam — no servers or keys required</div>
-      </div>
-      <div class="small">Demo user: <strong>Ola Nordmann, age 55</strong></div>
-    </header>
+# Wealth Planner — Demo (Tunaldo)
 
-    <div class="grid">
-      <main class="card">
-        <h2 style="margin-top:0">Snapshot</h2>
-        <div class="kpi" style="margin-bottom:12px">
-          <div class="item"><div class="small">Net worth</div><div style="font-weight:700;font-size:18px" id="k-net">4,200,000 NOK</div></div>
-          <div class="item"><div class="small">Expected at 65</div><div style="font-weight:700" id="k-65">—</div></div>
-          <div class="item"><div class="small">Liquidity</div><div style="font-weight:700" id="k-cash">150,000 NOK</div></div>
-        </div>
+This is a single-file static demo of the Wealth Planner for exam use.
+It runs fully in the browser (no servers, no API keys). Use GitHub Pages to publish.
 
-        <h3>Projection (net worth over time)</h3>
-        <div class="chart" id="chart">Yearly projection graph (placeholder)</div>
+How to run locally:
+- Open `index.html` in your browser.
 
-        <h3 style="margin-top:12px">Narrative summary</h3>
-        <div id="narrative" class="small">Run a simulation to get a short explanation and two recommended actions.</div>
+How to publish (GitHub Pages):
+1. Commit files to the repository.
+2. In the repo, go to Settings → Pages (or "Pages" in the sidebar).
+3. Under "Build and deployment" choose branch `main` (or `master`) and folder `/ (root)` and Save.
+4. After a minute, site will be available at `https://<your-github-username>.github.io/<repo-name>/`.
 
-        <h3 style="margin-top:12px">Projection table (key years)</h3>
-        <pre id="table" class="small">No simulation run yet.</pre>
-      </main>
+Notes:
+- Demo uses simplified calculations and mock data. Not financial advice.
+- To replace narrative with Claude/ChatGPT outputs, you must add a backend proxy to keep API keys secret.
 
-      <aside>
-        <div class="card">
-          <h3>Scenario builder</h3>
-          <label>Retirement age (current plan)</label>
-          <input id="retireAge" type="number" value="67" />
-          <label style="margin-top:8px">Change retirement (years) — negative = earlier</label>
-          <input id="deltaYears" type="number" value="-2" />
-          <label style="margin-top:8px">Change savings rate (%)</label>
-          <input id="deltaSave" type="number" step="0.5" value="3" />
-          <label style="margin-top:8px">Expected equity return (%) per year</label>
-          <input id="eqReturn" type="number" step="0.1" value="5" />
-          <div style="margin-top:10px; display:flex; gap:8px;">
-            <button id="run">Run simulation</button>
-            <button id="reset" style="background:#64748b">Reset</button>
-          </div>
-          <div style="margin-top:10px" class="small">This demo uses simplified assumptions for educational purposes. Not financial advice.</div>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <h3>Export</h3>
-          <div class="small">You can copy the narrative or print the page (browser &gt; Print) to create a PDF.</div>
-          <button id="copyNarrative" style="margin-top:8px">Copy narrative</button>
-        </div>
-      </aside>
-    </div>
-
-    <footer>
-      <div>Built for exam demo • Use mock data only • Contact: your-email@example.com</div>
-    </footer>
-  </div>
-
-  <script>
-    // Demo data (mock)
-    const demo = {
-      name: "Ola Nordmann",
-      age: 55,
-      netWorth: 4200000,
-      cash: 150000,
-      savingsRatePct: 10, // baseline
-      equityShare: 0.6
-    };
-
-    // Simple deterministic projection
-    function runProjection({age, netWorth, cash, retireAge, deltaYears, deltaSave, eqReturn}) {
-      const targetRetire = retireAge + deltaYears;
-      const years = [];
-      const sim = [];
-      let nw = netWorth;
-      const inflation = 0.02;
-      const startYear = new Date().getFullYear();
-      for(let i=0;i<40;i++){
-        const year = startYear + i;
-        const personAge = age + i;
-        // simplified: each year add savings (savings rate of netWorth*rate) and growth
-        const savings = nw * ( (demo.savingsRatePct + deltaSave) / 100 ) * 0.3; // simplified proxy
-        const growth = nw * ((eqReturn*(demo.equityShare) + 1*(1-demo.equityShare))/100);
-        nw = nw + savings + growth - (personAge>=targetRetire ? nw*0.04 : 0); // if retired withdraw 4% p.a.
-        sim.push({year, age: personAge, netWorth: Math.round(nw)});
-        if(personAge>=95) break;
-      }
-      return {sim, targetRetire};
-    }
-
-    // Narrative template (no AI)
-    function generateNarrative({sim, targetRetire}) {
-      const now = sim[0];
-      const at65 = sim.find(s=>s.age===65) || sim[Math.min(sim.length-1,10)];
-      const end = sim[sim.length-1];
-      const change = Math.round((end.netWorth - demo.netWorth));
-      const risk = (Math.abs(change)/demo.netWorth>0.25) ? "higher uncertainty in long-term outcomes." : "relatively stable outlook.";
-
-      const summary = `${demo.name}, based on the scenario your projected net worth at age ${at65.age} is ${at65.netWorth.toLocaleString()} NOK. If you retire around ${targetRetire}, the long-term projection to age ${end.age} ends at ${end.netWorth.toLocaleString()} NOK. Note: this is a simplified estimate with ${risk}`;
-
-      const actions = [
-        `Review liquidity: keep at least 6-12 months of expenses in cash (you currently have ${demo.cash.toLocaleString()} NOK).`,
-        `Consider small increases to long-term savings or gradual rebalancing toward less volatile assets if you plan to retire earlier.`
-      ];
-
-      return {summary, actions};
-    }
-
-    // UI wiring
-    document.getElementById('k-net').textContent = demo.netWorth.toLocaleString() + " NOK";
-    document.getElementById('k-cash').textContent = demo.cash.toLocaleString() + " NOK";
-
-    document.getElementById('run').addEventListener('click', ()=>{
-      const retireAge = Number(document.getElementById('retireAge').value);
-      const deltaYears = Number(document.getElementById('deltaYears').value);
-      const deltaSave = Number(document.getElementById('deltaSave').value);
-      const eqReturn = Number(document.getElementById('eqReturn').value);
-      const res = runProjection({
-        age: demo.age,
-        netWorth: demo.netWorth,
-        cash: demo.cash,
-        retireAge,
-        deltaYears,
-        deltaSave,
-        eqReturn
-      });
-      // update KPI
-      const at65 = res.sim.find(s=>s.age===65) || res.sim[Math.min(10,res.sim.length-1)];
-      document.getElementById('k-65').textContent = at65.netWorth.toLocaleString() + " NOK";
-      // update chart placeholder text
-      document.getElementById('chart').textContent = 'Projection: ' + res.sim.slice(0,8).map(s=>s.age+':'+(s.netWorth/1000).toFixed(0)+'k').join(' • ');
-      // narrative
-      const narr = generateNarrative(res);
-      document.getElementById('narrative').textContent = narr.summary + " Actions: 1) " + narr.actions[0] + " 2) " + narr.actions[1];
-      // table
-      const keyYears = [2025, 2030, 2035, 2040];
-      let table = '';
-      res.sim.forEach(r=>{
-        if([65,70,75,80,85,90,95].includes(r.age)) {
-          table += `${r.year} — age ${r.age} — ${r.netWorth.toLocaleString()} NOK\n`;
-        }
-      });
-      document.getElementById('table').textContent = table || "No key year data";
-    });
-
-    document.getElementById('reset').addEventListener('click', ()=>{
-      document.getElementById('retireAge').value = 67;
-      document.getElementById('deltaYears').value = -2;
-      document.getElementById('deltaSave').value = 3;
-      document.getElementById('eqReturn').value = 5;
-      document.getElementById('narrative').textContent = 'Run a simulation to get a short explanation and two recommended actions.';
-      document.getElementById('chart').textContent = 'Yearly projection graph (placeholder)';
-      document.getElementById('table').textContent = 'No simulation run yet.';
-      document.getElementById('k-65').textContent = '—';
-    });
-
-    document.getElementById('copyNarrative').addEventListener('click', ()=>{
-      navigator.clipboard.writeText(document.getElementById('narrative').textContent).then(()=>alert('Narrative copied'));
-    });
-  </script>
-</body>
-</html>
